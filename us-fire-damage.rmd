@@ -1,0 +1,59 @@
+---
+title: "US Wildfire Damage"
+author: "James Goldie, 360info"
+---
+
+```{r setup}
+library(tidyverse)
+library(themes360info)
+library(lubridate)
+library(here)
+```
+
+"Between 1980 and 2021, 19 Wildfire billion-dollar disaster events affected the United States (CPI-adjusted)." 
+
+> **Source:** NOAA National Centers for Environmental Information (NCEI) U.S. Billion-Dollar Weather and Climate Disasters (2022). https://www.ncdc.noaa.gov/billions/, https://doi.org/10.25921/stkw-7w73. Accessed 2022-01-14.
+
+```{r import}
+events <-
+  read_csv(
+    here("data", "events-US-1980-2021.csv"),
+    skip = 1,
+    col_types = cols_only(
+      Name = col_character(),
+      `Begin Date` = col_date(format = "%Y%m%d"),
+      `End Date` = col_date(format = "%Y%m%d"),
+      `Total CPI-Adjusted Cost (Millions of Dollars)` = col_number(),
+      Deaths = col_number())) %>%
+  set_names(c("name", "begin", "end", "amount", "deaths")) %>%
+  mutate(year_begin = year(begin), year_end = year(end))
+```
+
+Let's look at these by year:
+
+```{r years}
+# damage bar chart
+damage_barchart <-
+  ggplot(events) +
+  aes(x = year_begin, y = amount) +
+  geom_col(fill = "black") +
+  scale_y_continuous(labels = scales::label_dollar(scale = 1 / 1000,
+    prefix = "$", suffix = "B")) +
+  labs(
+    x = NULL, y = "Damage",
+    title = toupper("US wildfire damage"),
+    subtitle =
+      toupper("Cost of billion-dollar fires in US Dollars, CPI-adjusted"),
+    caption = paste(
+      "**Source: NOAA** National Centers for Environmental Information (NCEI)","&lt;doi.org/10.25921/stkw-7w73&gt; Accessed 2022-01-14.",
+      sep = "<br>")) +
+  theme_360() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank())
+
+save_360plot(damage_barchart, here("out", "damage-barchart.png"),
+  shape = "sdtv-landscape")
+
+
+```
